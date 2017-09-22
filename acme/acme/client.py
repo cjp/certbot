@@ -12,7 +12,6 @@ from six.moves import http_client  # pylint: disable=import-error
 
 import OpenSSL
 import requests
-import socket
 import sys
 
 from acme import errors
@@ -517,9 +516,7 @@ class ClientNetwork(object):  # pylint: disable=too-many-instance-attributes
         self._nonces = set()
         self.user_agent = user_agent
         self.session = requests.Session()
-        adapter = HTTPAdapterWithSocketOptions(
-            socket_options=[(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)])
-        self.session.mount('http://', adapter)
+        adapter = requests.adapters.HTTPAdapter(max_retries=3)
         self.session.mount('https://', adapter)
         self._default_timeout = timeout
 
@@ -698,15 +695,3 @@ class ClientNetwork(object):  # pylint: disable=too-many-instance-attributes
         response = self._send_request('POST', url, data=data, **kwargs)
         self._add_nonce(response)
         return self._check_response(response, content_type=content_type)
-
-
-class HTTPAdapterWithSocketOptions(requests.adapters.HTTPAdapter):
-    """Adapter allowing custom socket options."""
-    def __init__(self, *args, **kwargs):
-        self.socket_options = kwargs.pop("socket_options", None)
-        super(HTTPAdapterWithSocketOptions, self).__init__(*args, **kwargs)
-
-    def init_poolmanager(self, *args, **kwargs):
-        if self.socket_options is not None:
-            kwargs["socket_options"] = self.socket_options
-        super(HTTPAdapterWithSocketOptions, self).init_poolmanager(*args, **kwargs)
