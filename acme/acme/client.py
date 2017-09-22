@@ -516,6 +516,7 @@ class ClientNetwork(object):  # pylint: disable=too-many-instance-attributes
         self._nonces = set()
         self.user_agent = user_agent
         self.session = requests.Session()
+        self.session.keep_alive = False
         self._default_timeout = timeout
 
     def __del__(self):
